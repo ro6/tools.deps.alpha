@@ -1,6 +1,22 @@
 Changelog
 ===========
 
+* next
+  * Deprecate and warn for clojure.tools.deps.alpha.reader/clojure-env
+* 0.7.516 on June 29, 2019
+  * Add ctda.reader/default-deps to duplicate the deps.edn file logic in clj
+* 0.7.511 on June 29, 2019
+  * Fix regression on default clojure version in install
+* 0.7.505 on June 28, 2019
+  * TDEPS-52 Embed install deps.edn, fix path gen on deps with no paths
+  * TDEPS-96 Generate pom source path relative to transitive root dir
+  * TDEPS-88 Resolve meaning of -Srepro (include install deps, ignore ~/.clojure)
+* 0.6.496 on Mar 16, 2019
+  * TDEPS-74 Fix resolution of relative paths in transitive local deps
+  * TDEPS-20 Support Maven proxy settings
+* 0.6.488 on Feb 13, 2019
+  * TDEPS-114 Canonicalize Maven RELEASE or LATEST version marker
+  * Add error handling for unresolvable Maven version
 * 0.6.480 on Jan 4, 2019
   * TDEPS-112 Make exclusions classifier aware
 * 0.6.474 on Jan 2, 2019

@@ -18,7 +18,7 @@
     ;; maven-resolver-api
     [org.eclipse.aether RepositorySystem RepositorySystemSession]
     [org.eclipse.aether.resolution ArtifactRequest ArtifactDescriptorRequest VersionRangeRequest
-                                   ArtifactResolutionException]
+                                   VersionRequest ArtifactResolutionException]
 
     ;; maven-resolver-util
     [org.eclipse.aether.util.version GenericVersionScheme]
@@ -30,15 +30,30 @@
 
 (defmethod ext/canonicalize :mvn
   [lib {:keys [:mvn/version] :as coord} {:keys [mvn/repos mvn/local-repo]}]
-  (if (maven/version-range? version)
+  (cond
+    (contains? #{"RELEASE" "LATEST"} version)
+    (let [local-repo (or local-repo maven/default-local-repo)
+          system (maven/make-system)
+          session (maven/make-session system local-repo)
+          artifact (maven/coord->artifact lib coord)
+          req (VersionRequest. artifact (mapv maven/remote-repo repos) nil)
+          result (.resolveVersion system session req)]
+      (if result
+        [lib (assoc coord :mvn/version (.getVersion result))]
+        (throw (ex-info (str "Unable to resolve " lib " version: " version) {:lib lib :coord coord}))))
+
+    (maven/version-range? version)
     (let [local-repo (or local-repo maven/default-local-repo)
           system (maven/make-system)
           session (maven/make-session system local-repo)
           artifact (maven/coord->artifact lib coord)
           req (VersionRangeRequest. artifact (mapv maven/remote-repo repos) nil)
-          result (.resolveVersionRange system session req)
-          newest (.getHighestVersion result)]
-      [lib (assoc coord :mvn/version (.toString newest))])
+          result (.resolveVersionRange system session req)]
+      (if (and result (.getHighestVersion result))
+        [lib (assoc coord :mvn/version (.toString (.getHighestVersion result)))]
+        (throw (ex-info (str "Unable to resolve " lib " version: " version) {:lib lib :coord coord}))))
+
+    :else
     [lib coord]))
 
 (defmethod ext/lib-location :mvn
