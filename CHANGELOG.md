@@ -1,8 +1,16 @@
 Changelog
 ===========
 
-* next
+* 0.7.541 on Aug 9, 2019
+  * Fix: pom deps should include only compile and runtime deps
+  * Fix: remove slf4j-nop as dep - let consumers choose
+* 0.7.537 on Aug 9, 2019 
+  * Fix: exclusions were not canonicalized and may fail to match and exclude
+  * Perf: cache Maven resources and use Maven repository cache
+* 0.7.527 on July 17, 2019
   * Deprecate and warn for clojure.tools.deps.alpha.reader/clojure-env
+  * TDEPS-134 - use Maven mirrors
+  * Change unknown aliases from error to warning
 * 0.7.516 on June 29, 2019
   * Add ctda.reader/default-deps to duplicate the deps.edn file logic in clj
 * 0.7.511 on June 29, 2019

@@ -19,7 +19,8 @@
     [clojure.tools.deps.alpha.extensions.local]
     [clojure.tools.deps.alpha.extensions.git]
     [clojure.tools.deps.alpha.extensions.deps]
-    [clojure.tools.deps.alpha.extensions.pom])
+    [clojure.tools.deps.alpha.extensions.pom]
+    [clojure.tools.deps.alpha.util.io :as io])
   (:import
     [clojure.lang PersistentQueue]
     [java.io File]))
@@ -47,20 +48,11 @@
        %1 %2)
     {} ms))
 
-(defn- check-aliases
-  "Check that all aliases are known and error if aliases are undeclared"
-  [deps aliases]
-  (if-let [unknown (seq (remove #(contains? (:aliases deps) %) aliases))]
-    (throw (ex-info (str "Specified aliases are undeclared: " (vec unknown))
-             {:aliases (vec unknown), :available (-> deps :aliases keys vec)}))
-    aliases))
-
 (defn combine-aliases
   "Find, read, and combine alias maps identified by alias keywords from
   a deps configuration into a single args map."
   [deps alias-kws]
   (->> alias-kws
-    (check-aliases deps)
     (map #(get-in deps [:aliases %]))
     (apply merge-alias-maps)))
 
@@ -381,5 +373,16 @@
     {:deps {'foo {:git/url "https://github.com/clojure/core.async.git"
                   :sha "ecea2539a724a415b15e50f12815b4ab115cfd35"}}}
     nil)
+
+  (require '[clojure.tools.deps.alpha.util.session :as session])
+  (time
+    (do
+      (session/with-session
+        (resolve-deps
+          {:deps {'com.google.cloud/google-cloud-monitoring {:mvn/version "1.78.0"}}
+           :mvn/repos (merge mvn/standard-repos
+                        {"datomic-cloud" {:url "s3://datomic-releases-1fc2183a/maven/releases"}})}
+          nil))
+      nil))
 
   )

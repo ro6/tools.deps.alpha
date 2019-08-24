@@ -14,6 +14,7 @@
     [clojure.tools.deps.alpha :as deps]
     [clojure.tools.deps.alpha.reader :as reader]
     [clojure.tools.deps.alpha.util.io :as io :refer [printerrln]]
+    [clojure.tools.deps.alpha.util.session :as session]
     [clojure.tools.deps.alpha.script.parse :as parse])
   (:import
     [clojure.lang ExceptionInfo]))
@@ -54,18 +55,26 @@
   return the output lib map and classpath."
   [deps-map
    {:keys [resolve-aliases makecp-aliases aliases] :as opts}]
-  (let [resolve-args (deps/combine-aliases deps-map (concat aliases resolve-aliases))
-        cp-args (deps/combine-aliases deps-map (concat aliases makecp-aliases))
-        libs (deps/resolve-deps deps-map resolve-args)
-        cp (deps/make-classpath libs (:paths deps-map) cp-args)]
-    {:lib-map libs
-     :classpath cp}))
+  (session/with-session
+    (let [resolve-args (deps/combine-aliases deps-map (concat aliases resolve-aliases))
+          cp-args (deps/combine-aliases deps-map (concat aliases makecp-aliases))
+          libs (deps/resolve-deps deps-map resolve-args)
+          cp (deps/make-classpath libs (:paths deps-map) cp-args)]
+      {:lib-map libs
+       :classpath cp})))
+
+(defn- check-aliases
+  "Check that all aliases are known and warn if aliases are undeclared"
+  [deps aliases]
+  (when-let [unknown (seq (remove #(contains? (:aliases deps) %) (distinct aliases)))]
+    (printerrln "WARNING: Specified aliases are undeclared:" (vec unknown))))
 
 (defn run
   "Run make-classpath script. See -main for details."
   [{:keys [libs-file cp-file jvm-file main-file skip-cp
-           jvmopt-aliases main-aliases aliases] :as opts}]
+           resolve-aliases makecp-aliases jvmopt-aliases main-aliases aliases] :as opts}]
   (let [deps-map (combine-deps-files opts)]
+    (check-aliases deps-map (concat resolve-aliases makecp-aliases jvmopt-aliases main-aliases aliases))
     (when-not skip-cp
       (let [{:keys [lib-map classpath]} (create-classpath deps-map opts)]
         (io/write-file libs-file (pr-str lib-map))
